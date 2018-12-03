@@ -17,26 +17,38 @@ public class DayThree
     }
 
     boolean[][] overlaps = new boolean[dims[0]][dims[1]];
+    boolean[] hasOverlaps = new boolean[input.length];
     for (int i = 0; i < input.length; i++)
-      for (int j = i + 1; j < input.length; j++)
-        overlap(input[i], input[j], overlaps);
+      for (int j = 0; j < input.length; j++)
+        if (i!=j && overlap(input[i], input[j], overlaps))
+        {
+          hasOverlaps[i] = true;
+          hasOverlaps[j] = true;
+        }
     long ct = 0;
     for (int i = 0; i < dims[0]; i++)
       for (int j = 0; j < dims[1]; j++)
         if (overlaps[i][j])
           ct++;
-    System.out.println(ct);
+    System.out.println("Part 1: " + ct+" sq in");
+
+    for (int i = 0; i < input.length; i++)
+      if (!hasOverlaps[i])
+        System.out.println("Part 2: #"+(i+1));
   }
 
-  public static void overlap(Claim a, Claim b, boolean[][] overlaps)
+  public static boolean overlap(Claim a, Claim b, boolean[][] overlaps)
   {
-    for (int i = 0; i < a.w; i++)
-      for (int j = 0; j < a.h; j++)
-        if (!overlaps[i + a.l][j + a.t] && b.contains(i + a.l+1, j + a.t+1))
+    boolean didOverlap = false;
+    for (int x = a.l; x < a.l+a.w; x++)
+      for (int y = a.t; y < a.t+a.h; y++)
+        if ( b.contains(x+1, y+1))
         {
-          System.out.println((i + a.l)+" "+(j + a.t));
-          overlaps[i + a.l][j + a.t] = true;
+          didOverlap = true;
+          //System.out.println((i + a.l) + " " + (j + a.t));
+          overlaps[x][y] = true;
         }
+    return didOverlap;
   }
 
   public static class Claim
