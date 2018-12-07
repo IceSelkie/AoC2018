@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Set;
 
-public class DaySeven
+public class TheSumOfItsParts
 {
   public static final Pair<String,String>[] input = new Pair[]{p("T", "X"), p("G", "O"), p("X", "B"), p("I", "W"), p("N", "V"), p("K", "H"), p("S", "R"), p("P", "J"), p("L", "V"), p("D", "E"), p("J", "R"), p("U", "W"), p("M", "Q"), p("B", "F"), p("F", "E"), p("V", "Q"), p("C", "A"), p("H", "Z"), p("A", "Y"), p("O", "Y"), p("W", "Q"), p("E", "Y"), p("Y", "Z"), p("Q", "R"), p("R", "Z"), p("S", "E"), p("O", "W"), p("G", "B"), p("I", "N"), p("G", "I"), p("H", "R"), p("N", "C"), p("M", "W"), p("Y", "R"), p("T", "B"), p("G", "D"), p("J", "O"), p("I", "A"), p("J", "H"), p("T", "Y"), p("N", "H"), p("B", "V"), p("M", "R"), p("Y", "Q"), p("X", "J"), p("A", "E"), p("P", "Z"), p("P", "C"), p("N", "Q"), p("A", "O"), p("G", "X"), p("P", "U"), p("T", "S"), p("I", "V"), p("V", "H"), p("U", "F"), p("D", "Q"), p("D", "O"), p("G", "H"), p("I", "Z"), p("N", "D"), p("B", "Y"), p("J", "M"), p("V", "Y"), p("W", "Y"), p("E", "Z"), p("T", "N"), p("L", "U"), p("S", "A"), p("Q", "Z"), p("T", "F"), p("F", "Z"), p("J", "C"), p("X", "Y"), p("K", "V"), p("T", "I"), p("I", "O"), p("C", "W"), p("B", "Q"), p("W", "Z"), p("D", "H"), p("K", "A"), p("M", "E"), p("T", "U"), p("I", "J"), p("O", "Q"), p("M", "Z"), p("U", "C"), p("N", "F"), p("C", "H"), p("X", "E"), p("F", "O"), p("P", "O"), p("J", "A"), p("H", "Y"), p("A", "Q"), p("V", "Z"), p("S", "L"), p("H", "E"), p("X", "I"), p("O", "R")};
   //public static final Pair<String, String>[] input = new Pair[]{p("C", "A"), p("C", "F"), p("A", "B"), p("A", "D"), p("B", "E"), p("D", "E"), p("F", "E")};
