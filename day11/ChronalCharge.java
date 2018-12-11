@@ -21,17 +21,69 @@ public class ChronalCharge
         }
       }
     System.out.println("Part 1: " + maxx + "," + maxy);
+
+    int maxsize = -1;
+    int[][] map, last = null;
+    for (int size = 0; size < 300; size++)
+    {
+      map = new int[301 - size][301 - size];
+      for (int i = 1; i <= 300 - size; i++)
+        for (int j = 1; j <= 300 - size; j++)
+        {
+          int val = 0;
+          if (last==null)
+          {
+            for (int x = 0; x <= size; x++)
+              for (int y = 0; y <= size; y++)
+                val += getPower(i + x, j + y);
+            map[i][j] = val;
+            if (val > maxVal)
+            {
+              maxVal = val;
+              maxx = i;
+              maxy = j;
+              maxsize = size;
+            }
+          }
+          else
+          {
+            val = last[i][j];
+            for (int x = 0; x <= size; x++)
+              val += getPower(i+size, j+x) + getPower(i+x, j+size);
+            val -= getPower(i+size,j+size);
+            map[i][j] = val;
+            if (val > maxVal)
+            {
+              maxVal = val;
+              maxx = i;
+              maxy = j;
+              maxsize = size;
+            }
+          }
+        }
+      last = map;
+    }
+
+    System.out.println("Part 2: " + maxx + "," + maxy + "," + (maxsize+1));
+  }
+
+  private static int[] findMax(int[][][] values)
+  {
+    int maxValue = Integer.MIN_VALUE;
+    int[] ret = new int[]{-1, -1, -1};
+    for (int i = 0; i < 301; i++)
+      for (int j = 0; j < 301; j++)
+        for (int k = 0; k < 301; k++)
+          if (values[i][j][k] > maxValue)
+          {
+            maxValue = values[i][j][k];
+            ret = new int[]{i, j, k};
+          }
+    return ret;
   }
 
   private static int getPower(int x, int y)
   {
-    int ret = x+10;
-    ret*=y;
-    ret+=SERIALNUMBER;
-    ret*=x+10;
-    ret/=100;
-    ret%=10;
-    ret-=5;
-    return ret;
+    return (((x+10)*y+SERIALNUMBER)*(x+10))/100%10-5;
   }
 }
