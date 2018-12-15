@@ -8,6 +8,9 @@ import java.util.*;
 
 public class BeverageBandits
 {
+
+  public static final int [][] adjacentDirections = new int[][]{{0,-1},{-1,0},{1,0},{0,1}};
+
   public static void main(String[] args)
   {
     char[][] input = Util.readAllChars("src/main/java/aoc2018/day15/input");
@@ -51,9 +54,10 @@ public class BeverageBandits
       for (Unit u : onBoardAll)
       {
         // Move
-        Unit closestPathableTarget;
-        try {closestPathableTarget = findTarget(board, u, getOppList(u));} catch (Exception e)
-        { e.printStackTrace(); return true; }
+        Pair<Unit,List<Point2I>> closestPathableTarget;
+        closestPathableTarget = findTarget(board, u, getOppList(u));
+        if (closestPathableTarget == null)
+          return true;
         // If no findable target, WE ARE DONE!
 
         boolean attackingDistance = false;
@@ -63,7 +67,7 @@ public class BeverageBandits
         // Attack
         if (attackingDistance)
         {
-          Unit killed = u.attack();
+          Unit killed = u.attack(this);
           if (killed!=null)
             removeUnit(killed);
         }
@@ -93,22 +97,26 @@ public class BeverageBandits
       return onBoardElf;
     }
 
-    private <T extends Unit> T findTarget(char[][] board, Unit attacker, ArrayList<T> enemyList) throws Exception
+    private <T extends Unit> Pair<T,List<Point2I>> findTarget(char[][] board, Unit attacker, ArrayList<T> enemyList)
     {
       if (enemyList.size()==0)
-        throw new Exception("No targets to find.");
+        return null;
       enemyList = floodFillShortestDistance(attacker,enemyList);
       Unit.sortReadOrder(enemyList);
 
       if (enemyList.size()>0)
-        return enemyList.get(0);
+        return new Pair(enemyList.get(0),path);
       System.out.println("Unit found no pathable target!");
-      return null;
+      return new Pair(null,null);
     }
 
     private <T extends Unit> ArrayList<T> floodFillShortestDistance(Unit attacker, ArrayList<T> enemyList)
     {
-      T unitfortypecast = enemyList.get(0);
+      // TODO Sort each itteration, then when extending, linked
+      // TODO list them so we can figure out which path
+      // TODO is the best and will take us to the target.
+
+      T unitfortypetofind = enemyList.get(0);
       ArrayList<T> ret = new ArrayList<>();
       int distance = 0;
       ArrayList<Point2I> ffd = new ArrayList<>(), ffl = new ArrayList<>(), ffn;
@@ -119,23 +127,23 @@ public class BeverageBandits
       {
         ffn = new ArrayList<>();
         for (Point2I n : ffl)
-        {
-          ffn.add(neighbors(n));
-          ffn.remove(ffd, ffl);
-        }
+          for (int i = 0; i<4; i++)
+          {
+            Point2I p = new Point2I(n.x + adjacentDirections[i][0], n.y + adjacentDirections[i][1]);
+            if (!ffd.contains(p) && !ffl.contains(p) && board[p.y][p.x] != '#')
+              ffn.add(p);
+          }
         ffd.addAll(ffl);
         ffl = ffn;
         ListIterator<Point2I> iter = ffl.listIterator();
 
-        // Remove the wall locations, locations we've been to, and units of the same type. If opposite type, return these.
+        // Remove if units of the same type. If opposite type, return these.
         while (iter.hasNext())
         {
           Point2I next = iter.next();
-          if (board[next.y][next.x] == '#')
-            iter.remove();
           Unit unit = unitOnBoard(next);
           if (unit != null)
-            if (unitfortypecast instanceof Unit.Elf ^ unit instanceof Unit.Elf)
+            if (unitfortypetofind instanceof Unit.Elf == unit instanceof Unit.Elf)
               ret.add((T)unit);
             else
               iter.remove();
@@ -196,10 +204,36 @@ public class BeverageBandits
       return position.equals(((Unit)obj).position);
     }
 
-    public Unit attack()
+    public Unit attack(Game b)
     {
+      ArrayList<Unit> possibles = new ArrayList<>();
+      for (int i = 0; i < 4; i++)
+      {
+        Point2I p = new Point2I(position.x + adjacentDirections[i][0], position.y + adjacentDirections[i][1]);
+        possibles.add(b.unitOnBoard(p));
+      }
+      possibles.removeIf(u -> u == null || (u instanceof Elf == this instanceof Elf));
+      if (possibles.size() == 0)
+        return this;
+      sortHealthOrder(possibles);
+      attack(possibles.get(0));
+      return this;
+    }
 
-      //return this;
+    public boolean moveTowards(Pair<Unit, List<Point2I>> closestPathableTarget, char[][] board)
+    {
+      if (closestPathableTarget.b.size() > 1)
+        moveTo(closestPathableTarget.b.get(0), board);
+      if (closestPathableTarget.b.size() == 1 || closestPathableTarget.b.size() == 2)
+        return true;
+      return false;
+    }
+
+    private void moveTo(Point2I newPos, char[][] board)
+    {
+      board[position.y][position.x] = '.';
+      board[newPos.y][newPos.x] = this instanceof Elf?'E':'G';
+      position = newPos;
     }
 
     public static class Elf extends Unit
