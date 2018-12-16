@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-public class DaySixteen
+public class ChronalClassification
 {
   public static final String[] opcodes = new String[]{"addr", "addi", "mulr", "muli", "banr", "bani", "borr", "bori", "setr", "seti", "gtrr", "gtri", "gtir", "eqrr", "eqri", "eqir"};
 
