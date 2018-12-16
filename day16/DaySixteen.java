@@ -5,21 +5,72 @@ import util.Util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.ListIterator;
 
 public class DaySixteen
 {
   public static final String[] opcodes = new String[] {"addr", "addi", "mulr", "muli", "banr", "bani", "borr", "bori", "setr", "seti", "gtrr", "gtri", "gtir", "eqrr", "eqri", "eqir"};
   public static void main(String[] args)
   {
-    ArrayList<int[][]> info = readAll(new FileInput("src/main/java/aoc2018/day16/inputPart1Clean"));
+    ArrayList<int[][]> info = readAllSets(new FileInput("src/main/java/aoc2018/day16/inputPart1Clean"));
+
+    HashMap<Integer,ArrayList<String>> hm = new HashMap<>();
+    for (int i = 0; i<16; i++)
+      hm.put(i,Util.toArrayListString(opcodes));
+
     int ct = 0;
     for (int[][] data : info)
+    {
       //System.out.println(++ct+" "+ Util.aTS(possibilities(data).toArray()));
-      if (possibilities(data).size()>=3)
+      ArrayList<String> posibs = possibilities(data);
+      ArrayList<String> knownPosibs = hm.remove(data[1][0]);
+      posibs.removeIf(s -> !knownPosibs.contains(s));
+      hm.put(data[1][0], posibs);
+      if (posibs.size() >= 3)
         ct++;
+    }
     System.out.println("Part 1: " + ct);
 
-    System.out.println("Part 2: ");
+    boolean noChange = false;
+    while (!noChange)
+    {
+      noChange = true;
+      for (int i = 0; i < 16; i++)
+        if (hm.get(i).size() == 1)
+          for (int j = 0; j < 16; j++)
+            if (i != j)
+              if (hm.get(j).remove(hm.get(i).get(0)))
+                noChange = false;
+    }
+
+    HashMap<Integer, String> reference = new HashMap<>(16);
+    for (int i = 0; i<16; i++)
+    {
+      ArrayList<String> onlyPosib = hm.get(i);
+      if (onlyPosib.size() == 1)
+      {
+        System.out.println("Opcode " + i + " is " + onlyPosib.get(0));
+        reference.put(i, onlyPosib.get(0));
+      }
+    }
+
+    for (int[][] data : info)
+      if (!Arrays.equals(data[2],doOp(reference.get(data[1][0]),data[0],data[1])))
+      System.out.println("Error w/ op "+data[1][0]);
+
+    ArrayList<int[]> input2 = readAll(new FileInput("src/main/java/aoc2018/day16/inputPart2"));
+    int[] regist = new int[4];
+    for (int i = 0; i<input2.size(); i++)
+    {
+      int[] instSet = input2.get(i);
+      try
+      {
+        regist = doOp(reference.get(instSet[0]), regist, instSet);
+      } catch (IndexOutOfBoundsException e) {/*e.printStackTrace();*/ System.err.println("Input: "+Util.aTS(regist));System.err.println("Instruct "+i+": ("+reference.get(instSet[0])+") "+Util.aTS(instSet));}
+    }
+
+    System.out.println("Part 2: " + Util.aTS(regist));
   }
 
   public static ArrayList<String> possibilities(int[][] dataset)
@@ -91,7 +142,7 @@ public class DaySixteen
     return ret;
   }
 
-  public static ArrayList<int[][]> readAll(FileInput fi)
+  public static ArrayList<int[][]> readAllSets(FileInput fi)
   {
     ArrayList<int[][]> ret = new ArrayList<>();
     while (fi.hasMoreTokens())
@@ -103,6 +154,13 @@ public class DaySixteen
     int[][] ret = new int[3][];
     for (int i = 0; i<3; i++)
       ret[i] = read4(fi);
+    return ret;
+  }
+  public static ArrayList<int[]> readAll(FileInput fi)
+  {
+    ArrayList<int[]> ret = new ArrayList<>();
+    while (fi.hasMoreTokens())
+      ret.add(read4(fi));
     return ret;
   }
   public static int[] read4(FileInput fi)
