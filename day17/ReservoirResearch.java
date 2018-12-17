@@ -61,6 +61,8 @@ public class ReservoirResearch
     System.out.println("Part 1: " + (loss + ret));
     System.out.println("Part 2: " + (ret));
 
+    display(region);
+
   }
 
   private static void doLogic(char[][] region, Vector2I rg, Point2I water)
