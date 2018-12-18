@@ -8,13 +8,31 @@ import java.util.*;
 
 public class BeverageBandits
 {
-
-  public static final int [][] adjacentDirections = new int[][]{{0,-1},{-1,0},{1,0},{0,1}};
+  public static final ArrayList<Unit> adjdirs = new ArrayList<Unit>();
+  public static final Point2I[] adjacentDirections = new Point2I[]{new Point2I(0,-1),new Point2I(-1,0),new Point2I(1,0),new Point2I(0,1)}; // down right
 
   public static void main(String[] args)
   {
+    adjdirs.add(new Unit(0,-1));
+    adjdirs.add(new Unit(-1,0));
+    adjdirs.add( new Unit(1,0));
+    adjdirs.add( new Unit(0,1));
+    Unit.sortReadOrder(adjdirs);
+    for (int i =0; i<4; i++)
+      if (!adjacentDirections[i].equals(adjdirs.get(i).position))
+        System.out.println("error");
     char[][] input = Util.readAllChars("src/main/java/aoc2018/day15/input");
     Game g = new Game(input);
+
+    g.display();
+    g.tick();
+    g.display();
+    /*
+    while (!g.tick())
+    {
+      g.display();
+      try {Thread.sleep(2000);} catch (Exception e) {e.printStackTrace();}
+    }*/
   }
 
   public static class Game
@@ -51,25 +69,35 @@ public class BeverageBandits
       boolean stop;
 
       Unit.sortReadOrder(onBoardAll);
-      for (Unit u : onBoardAll)
+      int next = 0;
+      while (next < onBoardAll.size())
       {
+        Unit u = onBoardAll.get(next++);
         // Move
-        Pair<Unit,List<Point2I>> closestPathableTarget;
+        Pair<Unit, LinkedList<Point2I>> closestPathableTarget;
         closestPathableTarget = findTarget(board, u, getOppList(u));
         if (closestPathableTarget == null)
           return true;
         // If no findable target, WE ARE DONE!
 
-        boolean attackingDistance = false;
-        if (closestPathableTarget != null)
-          attackingDistance = u.moveTowards(closestPathableTarget, board);
+        // MOVE
+        boolean attackingDistance;
+        if (closestPathableTarget.a == null)
+          continue;
+        attackingDistance = closestPathableTarget.b.size() == 1;
+        if (!attackingDistance)
+        {
+          u.moveTo(closestPathableTarget.b.get(0), board);
+          closestPathableTarget.b.removeFirst();
+          attackingDistance = closestPathableTarget.b.size() == 1;
+        }
 
-        // Attack
+        // ATTACK
         if (attackingDistance)
         {
           Unit killed = u.attack(this);
-          if (killed!=null)
-            removeUnit(killed);
+          if (killed != null)
+            next = removeUnit(next, killed);
         }
       }
 
@@ -78,7 +106,7 @@ public class BeverageBandits
       return false;
     }
 
-    private void removeUnit(Unit killed)
+    private int removeUnit(int next, Unit killed)
     {
       if (killed instanceof Unit.Elf)
         onBoardElf.remove((Unit.Elf)killed);
@@ -86,41 +114,95 @@ public class BeverageBandits
         onBoardGob.remove((Unit.Goblin)killed);
       else
         System.out.println("That unit isn't an elf or goblin. Tf did u do?");
-      onBoardAll.remove(killed);
+
+      int index = onBoardAll.indexOf(killed);
+      if (index<next)
+        next--;
+      onBoardAll.remove(index);
       board[killed.position.y][killed.position.x] = '.';
+      return next;
     }
 
     private ArrayList getOppList(Unit u)
     {
       if (u instanceof Unit.Elf)
+      {
+        Unit.sortReadOrder(onBoardGob);
         return onBoardGob;
+      }
+      Unit.sortReadOrder(onBoardElf);
       return onBoardElf;
     }
 
-    private <T extends Unit> Pair<T,List<Point2I>> findTarget(char[][] board, Unit attacker, ArrayList<T> enemyList)
+    private <T extends Unit> Pair<T,LinkedList<Point2I>> findTarget(char[][] board, Unit attacker, ArrayList<T> enemyList)
     {
       if (enemyList.size()==0)
         return null;
-      enemyList = floodFillShortestDistance(attacker,enemyList);
-      Unit.sortReadOrder(enemyList);
+      ArrayList<Pair<T,LinkedList<Point2I>>> enemies = floodFillShortestDistance(attacker,enemyList);
+      //Unit.sortHealthOrder(enemyList);
 
-      if (enemyList.size()>0)
-        return new Pair(enemyList.get(0),path);
-      System.out.println("Unit found no pathable target!");
+      if (enemies.size()>0)
+        return enemies.get(0);
+      System.out.println("Unit found has no pathable target!");
       return new Pair(null,null);
     }
 
-    private <T extends Unit> ArrayList<T> floodFillShortestDistance(Unit attacker, ArrayList<T> enemyList)
+    private <T extends Unit> ArrayList<Pair<T,LinkedList<Point2I>>> floodFillShortestDistance(Unit attacker, ArrayList<T> enemyList)
     {
-      // TODO Sort each itteration, then when extending, linked
+      class LinkedTreeNode
+      {
+        LinkedTreeNode parent;
+        Point2I data;
+        ArrayList<LinkedTreeNode> children = new ArrayList<>();
+
+        LinkedTreeNode(Point2I data) {this.data = data;}
+        LinkedTreeNode(Point2I data, LinkedTreeNode parent) {this.data = data; this.parent = parent;}
+
+        LinkedTreeNode addchild(Point2I child) {LinkedTreeNode tn = new LinkedTreeNode(child, this); children.add(tn); return tn;}
+        LinkedList<Point2I> buildList() {LinkedList<Point2I> ret = new LinkedList<>(); LinkedTreeNode tn = this; while (tn.parent!=null) {ret.addFirst(tn.data); tn = tn.parent;} return ret;}
+        boolean contains(Point2I loc) {if (loc.equals(data)) return true; for (LinkedTreeNode child:children) if (loc.equals(child.data)) return true; return false;}
+      }
+      // TODO Sort each itteration, then when extending, linked tree
       // TODO list them so we can figure out which path
       // TODO is the best and will take us to the target.
 
-      T unitfortypetofind = enemyList.get(0);
-      ArrayList<T> ret = new ArrayList<>();
-      int distance = 0;
-      ArrayList<Point2I> ffd = new ArrayList<>(), ffl = new ArrayList<>(), ffn;
+      T unitForTypeToFind = enemyList.get(0);
 
+      ArrayList<Pair<T,LinkedList<Point2I>>> ret = new ArrayList<>();
+
+      LinkedTreeNode root = new LinkedTreeNode(attacker.position);
+
+      ArrayList<LinkedTreeNode> leaves = new ArrayList<>();
+      ArrayList<LinkedTreeNode> branches = new ArrayList<>();
+      branches.add (root);
+
+      boolean foundTargets = false;
+      while (branches.size()>0 && !foundTargets)
+      {
+        for (LinkedTreeNode oldLeaf : branches)
+          for (int i = 0; i < 4; i++)
+          {
+            Point2I p = new Point2I(oldLeaf.data.x + adjacentDirections[i].x, oldLeaf.data.y + adjacentDirections[i].y);
+            if (board[p.y][p.x] != '#' && !root.contains(p))
+            {
+              LinkedTreeNode tn = oldLeaf.addchild(p);
+              leaves.add(tn);
+              Unit temp = unitOnBoard(p);
+              if (temp != null)
+                if ((unitForTypeToFind instanceof Unit.Elf == temp instanceof Unit.Elf))
+                {
+                  foundTargets = true;
+                  ret.add(new Pair<>((T)temp, tn.buildList()));
+                  display(tn.buildList());
+                }
+            }
+          }
+        branches = leaves;
+          leaves = new ArrayList<>();
+      }
+
+      return ret;
+      /*
       ffl.add(attacker.position);
 
       while (ffl.size() != 0 && ret.size() == 0)
@@ -143,13 +225,14 @@ public class BeverageBandits
           Point2I next = iter.next();
           Unit unit = unitOnBoard(next);
           if (unit != null)
-            if (unitfortypetofind instanceof Unit.Elf == unit instanceof Unit.Elf)
+            if (unitForTypeToFind instanceof Unit.Elf == unit instanceof Unit.Elf)
               ret.add((T)unit);
             else
               iter.remove();
         }
       }
       return ret;
+      */
     }
 
     private Unit unitOnBoard(Point2I next)
@@ -181,6 +264,32 @@ public class BeverageBandits
     {
       return this.roundsComplete;
     }
+
+    public void display()
+    {
+      for (int y = 0; y< board.length; y++)
+      {
+        for (int x = 0; x < board[y].length; x++)
+          System.out.print(board[y][x]);
+        System.out.println();
+      }
+      System.out.println();
+    }
+    public void display(LinkedList<Point2I> ll)
+    {
+      ArrayList<Point2I> pts = new ArrayList<>(ll);
+      pts.remove(pts.size()-1);
+      for (int y = 0; y< board.length; y++)
+      {
+        for (int x = 0; x < board[y].length; x++)
+        {
+          Point2I pt = new Point2I(x, y);
+          System.out.print((char)((pts.contains(pt)) ? '0'+pts.indexOf(pt)%10 : board[y][x]));
+        }
+        System.out.println();
+      }
+      System.out.println();
+    }
   }
 
   public static class Unit implements Comparable
@@ -209,7 +318,7 @@ public class BeverageBandits
       ArrayList<Unit> possibles = new ArrayList<>();
       for (int i = 0; i < 4; i++)
       {
-        Point2I p = new Point2I(position.x + adjacentDirections[i][0], position.y + adjacentDirections[i][1]);
+        Point2I p = new Point2I(position.x + adjacentDirections[i].x, position.y + adjacentDirections[i].y);
         possibles.add(b.unitOnBoard(p));
       }
       possibles.removeIf(u -> u == null || (u instanceof Elf == this instanceof Elf));
