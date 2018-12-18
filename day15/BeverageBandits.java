@@ -8,31 +8,18 @@ import java.util.*;
 
 public class BeverageBandits
 {
-  public static final ArrayList<Unit> adjdirs = new ArrayList<Unit>();
   public static final Point2I[] adjacentDirections = new Point2I[]{new Point2I(0,-1),new Point2I(-1,0),new Point2I(1,0),new Point2I(0,1)}; // down right
 
   public static void main(String[] args)
   {
-    adjdirs.add(new Unit(0,-1));
-    adjdirs.add(new Unit(-1,0));
-    adjdirs.add( new Unit(1,0));
-    adjdirs.add( new Unit(0,1));
-    Unit.sortReadOrder(adjdirs);
-    for (int i =0; i<4; i++)
-      if (!adjacentDirections[i].equals(adjdirs.get(i).position))
-        System.out.println("error");
     char[][] input = Util.readAllChars("src/main/java/aoc2018/day15/input");
     Game g = new Game(input);
 
     g.display();
-    g.tick();
+    while (!g.tick());
     g.display();
-    /*
-    while (!g.tick())
-    {
-      g.display();
-      try {Thread.sleep(2000);} catch (Exception e) {e.printStackTrace();}
-    }*/
+
+    System.out.println("Part 1: " + g.roundsComplete() +" "+ g.totalHealth() + " " + (g.roundsComplete()*g.totalHealth()));
   }
 
   public static class Game
@@ -85,6 +72,7 @@ public class BeverageBandits
         if (closestPathableTarget.a == null)
           continue;
         attackingDistance = closestPathableTarget.b.size() == 1;
+        //display(closestPathableTarget.b); //TODO
         if (!attackingDistance)
         {
           u.moveTo(closestPathableTarget.b.get(0), board);
@@ -143,7 +131,7 @@ public class BeverageBandits
 
       if (enemies.size()>0)
         return enemies.get(0);
-      System.out.println("Unit found has no pathable target!");
+      //TODO System.out.println("Unit found has no pathable target!");
       return new Pair(null,null);
     }
 
@@ -160,13 +148,13 @@ public class BeverageBandits
 
         LinkedTreeNode addchild(Point2I child) {LinkedTreeNode tn = new LinkedTreeNode(child, this); children.add(tn); return tn;}
         LinkedList<Point2I> buildList() {LinkedList<Point2I> ret = new LinkedList<>(); LinkedTreeNode tn = this; while (tn.parent!=null) {ret.addFirst(tn.data); tn = tn.parent;} return ret;}
-        boolean contains(Point2I loc) {if (loc.equals(data)) return true; for (LinkedTreeNode child:children) if (loc.equals(child.data)) return true; return false;}
+        boolean contains(Point2I loc) {if (loc.equals(data)) return true; for (LinkedTreeNode child:children) if (child.contains(loc)) return true; return false;}
       }
-      // TODO Sort each itteration, then when extending, linked tree
-      // TODO list them so we can figure out which path
-      // TODO is the best and will take us to the target.
+      // Sort each itteration, then when extending, linked tree
+      // list them so we can figure out which path
+      // is the best and will take us to the target.
 
-      T unitForTypeToFind = enemyList.get(0);
+      boolean targetIsGob = enemyList.get(0) instanceof Unit.Goblin;
 
       ArrayList<Pair<T,LinkedList<Point2I>>> ret = new ArrayList<>();
 
@@ -183,17 +171,17 @@ public class BeverageBandits
           for (int i = 0; i < 4; i++)
           {
             Point2I p = new Point2I(oldLeaf.data.x + adjacentDirections[i].x, oldLeaf.data.y + adjacentDirections[i].y);
-            if (board[p.y][p.x] != '#' && !root.contains(p))
+            if ((board[p.y][p.x] == '.' || board[p.y][p.x]==(targetIsGob?'G':'E')) && !root.contains(p))
             {
               LinkedTreeNode tn = oldLeaf.addchild(p);
               leaves.add(tn);
               Unit temp = unitOnBoard(p);
               if (temp != null)
-                if ((unitForTypeToFind instanceof Unit.Elf == temp instanceof Unit.Elf))
+                if (targetIsGob ^ temp instanceof Unit.Elf)
                 {
                   foundTargets = true;
                   ret.add(new Pair<>((T)temp, tn.buildList()));
-                  display(tn.buildList());
+                  //display(tn.buildList());
                 }
             }
           }
@@ -238,6 +226,7 @@ public class BeverageBandits
     private Unit unitOnBoard(Point2I next)
     {
       Unit u = new Unit(next.x, next.y);
+      Unit.sortReadOrder(onBoardAll);
       int index = indexedBinarySearch(onBoardAll, u);
       if (index >= 0)
         return onBoardAll.get(index);
@@ -245,7 +234,14 @@ public class BeverageBandits
         return null;
     }
     
-    private static <T extends Unit> int indexedBinarySearch(ArrayList<T> list, Unit key) { int low = 0;int high = list.size()-1;while (low <= high) { int mid = (low + high) >>> 1;Unit midVal = list.get(mid);int cmp = midVal.compareTo(key);if (cmp < 0) low = mid + 1;else if (cmp > 0) high = mid - 1;else return mid; }return -(low + 1);   }
+    private static <T extends Unit> int indexedBinarySearch(ArrayList<T> list, Unit key)
+    {
+      for (int i = 0; i < list.size(); i++)
+        if (key.compareTo(list.get(i)) == 0)
+          return i;
+      return -1;
+      //int low = 0;int high = list.size()-1;while (low <= high) { int mid = (low + high) >>> 1;Unit midVal = list.get(mid);int cmp = midVal.compareTo(key);if (cmp < 0) low = mid + 1;else if (cmp > 0) high = mid - 1;else return mid; }return -(low + 1);
+    }
 
     public int unitsAlive()
     {
@@ -326,7 +322,9 @@ public class BeverageBandits
         return this;
       sortHealthOrder(possibles);
       attack(possibles.get(0));
-      return this;
+      if (possibles.get(0).health<=0)
+        return possibles.get(0);
+      return null;
     }
 
     public boolean moveTowards(Pair<Unit, List<Point2I>> closestPathableTarget, char[][] board)
