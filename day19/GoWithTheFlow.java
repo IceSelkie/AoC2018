@@ -14,12 +14,12 @@ public class GoWithTheFlow
   public static ArrayList<Pair<String,long[]>> instructions;
   public static int ip;
   public static int ipBind;
-  public static long[] registers = new long[]{1,0,0,0,0,0};//{0, 1, 10551270, 10551270, 4, 10551276};
+  public static long[] registers = new long[]{0,0,0,0,0,0};//{0, 1, 10551270, 10551270, 4, 10551276};
   //blic static long[] registers = new long[]{0, 1, 224815, 224815, 4, 10551276};
 
   public static void main(String[] args)
   {
-    readInput();
+    readInput("src/main/java/aoc2018/day19/input");
 
     //ip = 4;
     //registers = new long[]{1, 7, 1, 1, 3, 101*23};
@@ -30,7 +30,7 @@ public class GoWithTheFlow
     long[] rprev = new long[1];
     while (ip>=0&&ip<instructions.size())
     {
-      run();
+      run(false);
       if (registers[5]==10551276)
         registers[5] = 16*27;
       if (last0!=registers[0])
@@ -43,21 +43,21 @@ public class GoWithTheFlow
     System.out.println(Util.aTS(registers));
   }
 
-  private static boolean run()
+  protected static boolean run( boolean debug)
   {
     registers[ipBind] = ip;
-    //System.out.print(ip + " " + instructions.get(ip).a + " " + Util.aTS(instructions.get(ip).b) + " "+ Util.aTS(registers) + " ");
+    if (debug) System.out.print(ip + " " + instructions.get(ip).a + " " + Util.aTS(instructions.get(ip).b) + " "+ Util.aTS(registers) + " ");
     registers = runOpcode(instructions.get(ip).a,registers, instructions.get(ip).b);
     ip = (int)registers[ipBind];
-    //System.out.println(Util.aTS(registers));
+    if (debug) System.out.println(Util.aTS(registers));
     ip++;
-    //System.out.println(ip+" "+Util.aTS(registers));
+    // dump();
     return true;
   }
 
-  private static void readInput()
+  protected static void readInput(String fileName)
   {
-    FileInput fi = new FileInput("src/main/java/aoc2018/day19/input");
+    FileInput fi = new FileInput(fileName);
     String line = fi.readLine();
     ipBind = new Integer(line.substring(4));
     ip = 0;
@@ -112,5 +112,10 @@ public class GoWithTheFlow
         break;
     }
     return registerFinal;
+  }
+
+  public static void dump()
+  {
+    System.out.println(ip+" "+Util.aTS(registers));
   }
 }
