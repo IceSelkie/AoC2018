@@ -38,7 +38,10 @@ public class ChronalConversion extends GoWithTheFlow
       if (iterations % 1000000000 == 0)
       {
         if (lastLargestItterVal == largestItterationsValue)
+        {
           System.out.println("Part 2: " + largestItterationsValue);
+          break;
+        }
         lastLargestItterVal = largestItterationsValue;
       }
       iterations++;
