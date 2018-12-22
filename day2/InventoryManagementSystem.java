@@ -65,7 +65,7 @@ public class InventoryManagementSystem
     }
     if (count == 1)
     {
-      return "Part 2: " + a.substring(0, loc) + a.substring(loc + 1);
+      return a.substring(0, loc) + a.substring(loc + 1);
     }
     return null;
   }

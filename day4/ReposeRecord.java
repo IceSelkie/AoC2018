@@ -2,7 +2,7 @@ package aoc2018.day4;
 
 import java.util.HashMap;
 
-public class DayFour
+public class ReposeRecord
 {
   public static final HashMap<Integer, GuardObject> hm = new HashMap();
   public static void main(String[] args)

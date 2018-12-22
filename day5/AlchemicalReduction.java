@@ -1,8 +1,8 @@
 package aoc2018.day5;
 
-import java.util.ArrayList;
+import java.util.*;
 
-public class DayFive
+public class AlchemicalReduction
 {
   public static void main(String[] args)
   {
@@ -13,42 +13,41 @@ public class DayFive
 
 
 
-    System.out.println("Part 1: " + collapse(input));
+    long time = System.currentTimeMillis();
+    System.out.println("Part 1: " + collapse(input) + " " + (System.currentTimeMillis()-time));
 
-    System.out.println(input);
-    int lowest = Integer.MAX_VALUE;
+    time = System.currentTimeMillis();
+
+    HashMap<Character, Integer> hm = new HashMap<>(26);
     for (char c = 'a'; c <= 'z'; c++)
+    {
+      final char c2 = c; new Thread(() -> hm.put(c2, collapse(remove(c2, input)))).run();
+    }
+    while (hm.size()!=26);
+    int lowest = Integer.MAX_VALUE;
+    for (Character c : hm.keySet())
+      lowest = Math.min(lowest,hm.get(c));
 
-      if (input.indexOf(c) != -1 || input.indexOf(Character.toUpperCase(c)) != -1)
-      {
-        //System.out.print(remove(c, input) + " - ");
-        //System.out.println(" - "+collapse(remove(c, input)));
-        lowest = Math.min(lowest, collapse(remove(c, input)));
-      }
-    System.out.println("Part 2: " + lowest);
+    System.out.println("Part 2: " + lowest+ " " + (System.currentTimeMillis()-time));
   }
 
   public static int collapse(String input)
   {
-    ArrayList<Character> inpL = c(input.toLowerCase().toCharArray());
-    ArrayList<Character> inpC = c(input.toUpperCase().toCharArray());
-    ArrayList<Character> inp = c(input.toCharArray());
+    LinkedList<Character> inpL = l(input.toLowerCase().toCharArray());
+    LinkedList<Character> inpC = l(input.toUpperCase().toCharArray());
+    LinkedList<Character> inp = l(input.toCharArray());
     int len = 0;
     while (len != inp.size())
     {
       len = inp.size();
-      for (int i = 1; i < inp.size(); i++)
+      ListIterator<Character> inpLI = inpL.listIterator();
+      ListIterator<Character> inpCI = inpC.listIterator();
+      ListIterator<Character> inpI = inp.listIterator();
+      while (inpI.hasNext())
       {
-        if (i<1) i = 1;
-        if (inpL.get(i) == inpL.get(i - 1) && ((inp.get(i) == inpL.get(i) && inp.get(i - 1) == inpC.get(i - 1)) || (inp.get(i) == inpC.get(i) && inp.get(i - 1) == inpL.get(i - 1))))
+        if (inpLI.next()==inpLI.next()&&inpI.next()!=inpI.next()&&inpCI.next()==inpLI.previous())
         {
-          inp.remove(i);
-          inp.remove(i - 1);
-          inpL.remove(i);
-          inpL.remove(i - 1);
-          inpC.remove(i);
-          inpC.remove(i - 1);
-          i-=2;
+          //TODO: fix conditional, it doesn't work. If it fails the indecies are messed.
         }
       }
     }
@@ -71,10 +70,17 @@ public class DayFive
       ret.add(c);
     return ret;
   }
-  public static String s(ArrayList<Character> data)
+  public static LinkedList<Character> l(char[] data)
+  {
+    LinkedList<Character> ret = new LinkedList<>();
+    for (char c:data)
+      ret.add(c);
+    return ret;
+  }
+  public static String s(List<Character> data)
   {
     StringBuilder ret = new StringBuilder(data.size());
-    for (char c:data)
+    for (char c : data)
       ret.append(c);
     return ret.toString();
   }
