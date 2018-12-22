@@ -12,6 +12,7 @@ public class ARegularMap
     System.out.println(regex);
     Map m = new Map(regex);
     System.out.println("Part 1: "+m.furthestDoor());
+    System.out.println("Part 2: "+m.doorsMoreThan(1000));
   }
 
 

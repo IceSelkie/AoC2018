@@ -1,10 +1,10 @@
 package aoc2018.day20;
 
+import hyec.util.Pair;
 import hyec.util.spacial.point.Point2I;
 import hyec.util.spacial.vector.Vector2I;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -114,31 +114,52 @@ public class Map
     int maxDistance = 0;
     for (Point2I key : paths.keySet())
       maxDistance = max(maxDistance,paths.get(key).size());
-    return 0;
+    return maxDistance;
+  }
+
+  public int doorsMoreThan(int num)
+  {
+    HashMap<Point2I,ArrayList<Point2I>> paths = floodFillGeneratePaths(1 - 2 * region.x1, 1 - 2 * region.y1);
+    int ct = 0;
+    for (Point2I key : paths.keySet())
+      if (paths.get(key).size()>=num)ct++;
+    return ct;
   }
 
   private HashMap<Point2I, ArrayList<Point2I>> floodFillGeneratePaths(int x, int y)
   {
     HashMap<Point2I, ArrayList<Point2I>> ret = new HashMap<>();
 
-    floodFillGeneratePathsFrom(x,y,ret,new ArrayList<>());
+    floodFillGeneratePathsFrom(x,y,ret);
 
     return ret;
   }
 
-  private void floodFillGeneratePathsFrom(int x, int y, HashMap<Point2I, ArrayList<Point2I>> existingPoints, ArrayList<Point2I> pathToHere)
+  private void floodFillGeneratePathsFrom(int x, int y, HashMap<Point2I, ArrayList<Point2I>> existingPoints)
   {
-    // Stack of positions and hashmap of paths and stack of current path. Or use get from hashmap.
     Point2I here = new Point2I(x, y);
-    if (existingPoints.containsKey(here))
-      return;
-    existingPoints.put(here, pathToHere);
-    for (int dr = 0; dr < 4; dr++)
+    LinkedList<Pair<Point2I, ArrayList<Point2I>>> toTest = new LinkedList<>();
+    toTest.add(new Pair<>(here, new ArrayList<>()));
+
+    // Stack of positions and hashmap of paths and stack of current path. Or use get from hashmap.
+
+    while (!toTest.isEmpty())
     {
-      int dx = (dr%2)+(dr/2-1); // -1 0 0 1
-      int dy = (dr/2)-(dr%2); // 0 -1 1 0
-      if (map[y + dy][x + dx] != '#')
-        floodFillGeneratePathsFrom(x + 2 *dx, y + 2 * dy, existingPoints, duplicateAndAdd(pathToHere, here));
+      here = toTest.peek().a;
+      ArrayList<Point2I> pathToHere = toTest.pop().b;
+      x=here.x;
+      y=here.y;
+
+      if (existingPoints.containsKey(here))
+        continue;
+      existingPoints.put(here, pathToHere);
+      for (int dr = 0; dr < 4; dr++)
+      {
+        int dx = (dr % 2) + (dr / 2 - 1); // -1 0 0 1
+        int dy = (dr / 2) - (dr % 2); // 0 -1 1 0
+        if (map[y + dy][x + dx] != '#')
+          toTest.add(new Pair<>(new Point2I(x + 2 * dx, y + 2 * dy), duplicateAndAdd(pathToHere, here)));
+      }
     }
   }
 
