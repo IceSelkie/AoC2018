@@ -10,6 +10,8 @@ public class BeverageBandits
 {
   // Used to move in the directions next to a square without having to calculate these a lot, or have them explicitly down there.
   public static final Point2I[] adjacentDirections = new Point2I[]{new Point2I(0,-1),new Point2I(-1,0),new Point2I(1,0),new Point2I(0,1)}; // down right
+  public static int ELFDAMAGE = 3;
+  public static int GOBDAMAGE = 3;
 
   public static void main(String[] args)
   {
@@ -24,6 +26,22 @@ public class BeverageBandits
 
     // Output the answer and its parts (to help with troubleshooting)
     System.out.println("Part 1: " + g.roundsComplete() +"*"+ g.totalHealth() + "=" + (g.roundsComplete()*g.totalHealth()));
+
+    while (true)
+    {
+      ELFDAMAGE++;
+      System.out.println("Starting: "+ELFDAMAGE);
+      input = Util.readAllChars("src/main/java/aoc2018/day15/input");
+      g = new Game(input);
+      int elfnumstart = g.onBoardElf.size();
+      while (!g.tick());
+      if (g.onBoardElf.size()==elfnumstart)
+      {
+        g.display();
+        System.out.println("Part 2: " + g.roundsComplete() +"*"+ g.totalHealth() + "=" + (g.roundsComplete()*g.totalHealth()) + " ("+ELFDAMAGE+")");
+        break;
+      }
+    }
   }
 
   public static class Game
@@ -194,37 +212,6 @@ public class BeverageBandits
       }
 
       return ret;
-      /*
-      ffl.add(attacker.position);
-
-      while (ffl.size() != 0 && ret.size() == 0)
-      {
-        ffn = new ArrayList<>();
-        for (Point2I n : ffl)
-          for (int i = 0; i<4; i++)
-          {
-            Point2I p = new Point2I(n.x + adjacentDirections[i][0], n.y + adjacentDirections[i][1]);
-            if (!ffd.contains(p) && !ffl.contains(p) && board[p.y][p.x] != '#')
-              ffn.add(p);
-          }
-        ffd.addAll(ffl);
-        ffl = ffn;
-        ListIterator<Point2I> iter = ffl.listIterator();
-
-        // Remove if units of the same type. If opposite type, return these.
-        while (iter.hasNext())
-        {
-          Point2I next = iter.next();
-          Unit unit = unitOnBoard(next);
-          if (unit != null)
-            if (unitForTypeToFind instanceof Unit.Elf == unit instanceof Unit.Elf)
-              ret.add((T)unit);
-            else
-              iter.remove();
-        }
-      }
-      return ret;
-      */
     }
 
     private Unit unitOnBoard(Point2I next)
@@ -292,12 +279,13 @@ public class BeverageBandits
   public static class Unit implements Comparable
   {
     Point2I position;
-    final int attackPower = 3;
+    final int attackPower;
     int health = 200;
 
-    public Unit(int x, int y)
+    public Unit(int x, int y, int damage)
     {
       position = new Point2I(x, y);
+      attackPower = damage;
     }
 
     public void attack(Unit victim)
@@ -347,7 +335,7 @@ public class BeverageBandits
     public static class Elf extends Unit
     {
 
-      public Elf(int x, int y) { super(x, y); }
+      public Elf(int x, int y) { super(x, y, ELFDAMAGE); }
 
       public int compareTo(Object obj)
       {
@@ -362,7 +350,7 @@ public class BeverageBandits
     public static class Goblin extends Unit
     {
 
-      public Goblin(int x, int y) { super(x, y); }
+      public Goblin(int x, int y) { super(x, y, GOBDAMAGE); }
 
       public int compareTo(Object obj)
       {
