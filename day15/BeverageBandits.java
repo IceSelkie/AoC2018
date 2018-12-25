@@ -8,18 +8,22 @@ import java.util.*;
 
 public class BeverageBandits
 {
+  // Used to move in the directions next to a square without having to calculate these a lot, or have them explicitly down there.
   public static final Point2I[] adjacentDirections = new Point2I[]{new Point2I(0,-1),new Point2I(-1,0),new Point2I(1,0),new Point2I(0,1)}; // down right
 
   public static void main(String[] args)
   {
+    // Read the map and create a new game board with the map.
     char[][] input = Util.readAllChars("src/main/java/aoc2018/day15/input");
     Game g = new Game(input);
 
+    // Display then play turns until it is over then display again.
     g.display();
     while (!g.tick());
     g.display();
 
-    System.out.println("Part 1: " + g.roundsComplete() +" "+ g.totalHealth() + " " + (g.roundsComplete()*g.totalHealth()));
+    // Output the answer and its parts (to help with troubleshooting)
+    System.out.println("Part 1: " + g.roundsComplete() +"*"+ g.totalHealth() + "=" + (g.roundsComplete()*g.totalHealth()));
   }
 
   public static class Game
@@ -38,6 +42,7 @@ public class BeverageBandits
       onBoardAll = new ArrayList<>();
       roundsComplete = 0;
 
+      //Find the 'E's and 'G's on the board, and make the actual objects. Store in the lists.
       for (int y = 0; y < board.length; y++)
         for (int x = 0; x < board[y].length; x++)
         {
@@ -47,14 +52,13 @@ public class BeverageBandits
             onBoardGob.add(new Unit.Goblin(x, y));
         }
 
+        // Add both lists to the "all" list.
       onBoardAll.addAll(onBoardElf);
       onBoardAll.addAll(onBoardGob);
     }
 
     public boolean tick()
     {
-      boolean stop;
-
       Unit.sortReadOrder(onBoardAll);
       int next = 0;
       while (next < onBoardAll.size())
@@ -225,12 +229,9 @@ public class BeverageBandits
 
     private Unit unitOnBoard(Point2I next)
     {
-      Unit u = new Unit(next.x, next.y);
-      Unit.sortReadOrder(onBoardAll);
-      int index = indexedBinarySearch(onBoardAll, u);
-      if (index >= 0)
-        return onBoardAll.get(index);
-      else
+      for (int i = 0; i<onBoardAll.size(); i++)
+        if (onBoardAll.get(i).position.equals(next))
+          return onBoardAll.get(i);
         return null;
     }
     
